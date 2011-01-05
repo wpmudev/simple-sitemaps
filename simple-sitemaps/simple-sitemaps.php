@@ -31,11 +31,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 if ( !is_multisite() )
   die( __('Simple Sitemaps is only compatible with Multisite installs.') );
 
-if ( file_exists( WP_CONTENT_DIR . '/sitemap.php' ) ) {
-	include_once( WP_CONTENT_DIR . '/sitemap.php' );
-} else {
+if ( !file_exists( WP_CONTENT_DIR . '/sitemap.php' ) )
 	die( __('Simple Sitemaps file "sitemap.php" not found. Please move it to /wp-content/ before activating.') );
-}
+
 
 class Incsub_SimpleSitemaps {
 	var $totalposts = 50; // Number of posts to display
