@@ -1,15 +1,17 @@
 <?php
 /*
-Plugin Name:  Simple Sitemaps For WPMU
-Description:  On-demand sitemaps for WPMU.
-Version:      1.0.3
-Author:       Viper007Bond (Incsub)
-Author URI:   http://incsub.com/
+Plugin Name: Simple Sitemaps For Multisite
+Description: The ultimate search engine plugin - Simply have sitemaps created, submitted and updated for every blog on your site
+Plugin URI: http://premium.wpmudev.org/project/sitemaps-and-seo-wordpress-mu-style
+Version: 1.0.4
+Author: Viper007Bond (Incsub)
+Author URI: http://premium.wpmudev.org/
+Network: true
 WDP ID: 39
 */
 
 /* 
-Copyright 2007-2010 Incsub (http://incsub.com)
+Copyright 2007-2011 Incsub (http://incsub.com)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License (Version 2 - GPLv2) as published by
@@ -25,8 +27,18 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+//force multisite
+if ( !is_multisite() )
+  die( __('Simple Sitemaps is only compatible with Multisite installs.') );
+
+if ( file_exists( WP_CONTENT_DIR . '/sitemap.php' ) ) {
+	include_once( WP_CONTENT_DIR . '/sitemap.php' );
+} else {
+	die( __('Simple Sitemaps file "sitemap.php" not found. Please move it to /wp-content/ before activating.') );
+}
+
 class Incsub_SimpleSitemaps {
-	var $totalposts = 25; // Number of posts to display
+	var $totalposts = 50; // Number of posts to display
 
 	// Plugin initialization
 	function Incsub_SimpleSitemaps() {
@@ -38,7 +50,7 @@ class Incsub_SimpleSitemaps {
 		//add_action( 'publish_post', array(&$this, 'PingGoogle'), 16 );
 		//add_action( 'delete_post', array(&$this, 'PingGoogle'), 16 );
 		add_action( 'publish_post', array(&$this, 'PingSearchEngines'), 16 );
-        add_action( 'delete_post', array(&$this, 'PingSearchEngines'), 16 );
+    add_action( 'delete_post', array(&$this, 'PingSearchEngines'), 16 );
 	}
 
 	// Delete this blog's sitemap
@@ -52,34 +64,28 @@ class Incsub_SimpleSitemaps {
 		$this->PingYahoo();
 		//$this->PingAsk();
 		$this->PingBing();
-    }
+  }
 
-    function PingYahoo() {
-        global $wpdb;
-        $yahoo = 'http://search.yahooapis.com/SiteExplorerService/V1/ping?sitemap=' .
-            urlencode( get_option('siteurl') . '/sitemap.xml' );
-        // Until WP(MU) 2.7 comes along with it's HTTP API, file_get_contents() should do for now (hopefully)
-        @file_get_contents( $yahoo );
+  function PingYahoo() {
+    global $wpdb;
+    $yahoo = 'http://search.yahooapis.com/SiteExplorerService/V1/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
 
-    }
+    wp_remote_get( $yahoo );
+  }
 
-    function PingAsk() {
-        global $wpdb;
-        $ask = 'http://submissions.ask.com/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
+  function PingAsk() {
+    global $wpdb;
+    $ask = 'http://submissions.ask.com/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
 
-        // Until WP(MU) 2.7 comes along with it's HTTP API, file_get_contents() should do for now (hopefully)
-        @file_get_contents( $ask );
+    wp_remote_get( $ask );
+  }
 
-    }
+  function PingBing() {
+    global $wpdb;
+    $bing = 'http://www.bing.com/webmaster/ping.aspx?siteMap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
 
-    function PingBing() {
-        global $wpdb;
-        $bing = 'http://www.bing.com/webmaster/ping.aspx?siteMap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
-
-        // Until WP(MU) 2.7 comes along with it's HTTP API, file_get_contents() should do for now (hopefully)
-        @file_get_contents( $bing );
-
-    }
+    wp_remote_get( $bing );
+  }
 
 	// Notify Google of a sitemap change
 	function PingGoogle() {
@@ -87,8 +93,7 @@ class Incsub_SimpleSitemaps {
 
 		$pingurl = 'http://www.google.com/webmasters/sitemaps/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
 
-		// Until WP(MU) 2.7 comes along with it's HTTP API, file_get_contents() should do for now (hopefully)
-		@file_get_contents( $pingurl );
+		wp_remote_get( $pingurl );
 	}
 
 
@@ -197,8 +202,7 @@ if (!defined('FILE_APPEND')) {
  * @since       PHP 5
  * @require     PHP 4.0.0 (user_error)
  */
-function php_compat_file_put_contents($filename, $content, $flags = null, $resource_context = null)
-{
+function php_compat_file_put_contents($filename, $content, $flags = null, $resource_context = null) {
     // If $content is an array, convert it to a string
     if (is_array($content)) {
         $content = implode('', $content);
@@ -267,10 +271,21 @@ function php_compat_file_put_contents($filename, $content, $flags = null, $resou
 
 // Define
 if (!function_exists('file_put_contents')) {
-    function file_put_contents($filename, $content, $flags = null, $resource_context = null)
-    {
-        return php_compat_file_put_contents($filename, $content, $flags, $resource_context);
-    }
+  function file_put_contents($filename, $content, $flags = null, $resource_context = null) {
+      return php_compat_file_put_contents($filename, $content, $flags, $resource_context);
+  }
 }
 
+
+///////////////////////////////////////////////////////////////////////////
+/* -------------------- Update Notifications Notice -------------------- */
+if ( !function_exists( 'wdp_un_check' ) ) {
+  add_action( 'admin_notices', 'wdp_un_check', 5 );
+  add_action( 'network_admin_notices', 'wdp_un_check', 5 );
+  function wdp_un_check() {
+    if ( !class_exists( 'WPMUDEV_Update_Notifications' ) && current_user_can( 'edit_users' ) )
+      echo '<div class="error fade"><p>' . __('Please install the latest version of <a href="http://premium.wpmudev.org/project/update-notifications/" title="Download Now &raquo;">our free Update Notifications plugin</a> which helps you stay up-to-date with the most stable, secure versions of WPMU DEV themes and plugins. <a href="http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-information/">More information &raquo;</a>', 'wpmudev') . '</a></p></div>';
+  }
+}
+/* --------------------------------------------------------------------- */
 ?>
