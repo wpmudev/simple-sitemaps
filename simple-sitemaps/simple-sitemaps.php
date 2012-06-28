@@ -3,7 +3,7 @@
 Plugin Name: Simple Sitemaps For Multisite
 Description: The ultimate search engine plugin - Simply have sitemaps created, submitted and updated for every blog on your site
 Plugin URI: http://premium.wpmudev.org/project/sitemaps-and-seo-wordpress-mu-style
-Version: 1.0.5
+Version: 1.1
 Author: Viper007Bond (Incsub)
 Author URI: http://premium.wpmudev.org/
 Network: true
@@ -34,6 +34,8 @@ if ( !is_multisite() )
 if ( !file_exists( WP_CONTENT_DIR . '/sitemap.php' ) )
 	die( __('Simple Sitemaps file "sitemap.php" not found. Please move it to /wp-content/ before activating.') );
 
+if (!defined('SIMPLE_SITEMAPS_USE_CACHE')) define('SIMPLE_SITEMAPS_USE_CACHE', true);
+
 
 class Incsub_SimpleSitemaps {
 	var $totalposts = 50; // Number of posts to display
@@ -44,53 +46,43 @@ class Incsub_SimpleSitemaps {
 		add_action( 'publish_post', array(&$this, 'DeleteSitemap'), 15 );
 		add_action( 'delete_post', array(&$this, 'DeleteSitemap'), 15 );
 
-		// Ping Google on new post or post delete
-		//add_action( 'publish_post', array(&$this, 'PingGoogle'), 16 );
-		//add_action( 'delete_post', array(&$this, 'PingGoogle'), 16 );
-		add_action( 'publish_post', array(&$this, 'PingSearchEngines'), 16 );
-    add_action( 'delete_post', array(&$this, 'PingSearchEngines'), 16 );
+		// Ping search engines on new post or post delete
+		// add_action( 'publish_post', array(&$this, 'PingSearchEngines'), 16 );
+    	add_action( 'delete_post', array(&$this, 'PingSearchEngines'), 16 );
+
+    	$totalposts = defined('SIMPLE_SITEMAPS_POST_SOFT_LIMIT') ? SIMPLE_SITEMAPS_POST_SOFT_LIMIT : $this->totalposts;
+    	$this->totalposts = apply_filters('simple_sitemaps-totals_soft_limit', $totalposts);
 	}
 
 	// Delete this blog's sitemap
 	function DeleteSitemap() {
 		global $wpdb;
-		@unlink( ABSPATH . 'wp-content/blogs.dir/' . $wpdb->blogid . '/files/sitemap.xml' );
+		$filepath = apply_filters('simple_sitemaps-sitemap_location', ABSPATH . 'wp-content/blogs.dir/' . $wpdb->blogid . '/files/sitemap.xml');
+		@unlink($filepath);
 	}
 
 	function PingSearchEngines() {
 		$this->PingGoogle();
 		$this->PingYahoo();
-		//$this->PingAsk();
 		$this->PingBing();
   }
 
   function PingYahoo() {
     global $wpdb;
     $yahoo = 'http://search.yahooapis.com/SiteExplorerService/V1/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
-
     wp_remote_get( $yahoo );
-  }
-
-  function PingAsk() {
-    global $wpdb;
-    $ask = 'http://submissions.ask.com/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
-
-    wp_remote_get( $ask );
   }
 
   function PingBing() {
     global $wpdb;
     $bing = 'http://www.bing.com/webmaster/ping.aspx?siteMap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
-
     wp_remote_get( $bing );
   }
 
 	// Notify Google of a sitemap change
 	function PingGoogle() {
 		global $wpdb;
-
 		$pingurl = 'http://www.google.com/webmasters/sitemaps/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
-
 		wp_remote_get( $pingurl );
 	}
 
@@ -99,9 +91,12 @@ class Incsub_SimpleSitemaps {
 	function GenerateSitemap( $blogid ) {
 		global $wpdb;
 
+		$totalpages = (int)apply_filters('simple_sitemaps-pages_count_override', $this->totalposts);
+		$totalposts = (int)apply_filters('simple_sitemaps-posts_count_override', $this->totalposts);
+
 		switch_to_blog( $wpdb->blogid );
-		$latestpages = get_posts( 'numberposts=' . $this->totalposts . '&post_type=page' );
-		$latestposts = get_posts( 'numberposts=' . $this->totalposts . '&orderby=date&order=DESC' );
+		$latestpages = $totalpages ? get_posts( 'numberposts=' . $totalpages . '&post_type=page' ) : array();
+		$latestposts = $totalposts ? get_posts( 'numberposts=' . $totalposts . '&orderby=date&order=DESC' ) : array();
 
 		$content  = '<?xml version="1.0" encoding="UTF-8"?' . ">\n";
 		$content .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
@@ -110,6 +105,7 @@ class Incsub_SimpleSitemaps {
 		$prioritydiff = 1 / $this->totalposts;
 		$latestpages = array_reverse($latestpages);
 		foreach ( $latestpages as $post ) {
+			if (!apply_filters('simple_sitemaps-include_post', true, $post)) continue;
 			$content .= "	<url>\n";
 			$content .= '		<loc>' . get_permalink( $post->ID ) . "</loc>\n";
 			$content .= '		<lastmod>' . mysql2date( 'Y-m-d\TH:i:s', $post->post_modified_gmt ) . "+00:00</lastmod>\n";
@@ -118,6 +114,7 @@ class Incsub_SimpleSitemaps {
 		}
 		unset($post);
 		foreach ( $latestposts as $post ) {
+			if (!apply_filters('simple_sitemaps-include_post', true, $post)) continue;
 			$content .= "	<url>\n";
 			$content .= '		<loc>' . get_permalink( $post->ID ) . "</loc>\n";
 			$content .= '		<lastmod>' . mysql2date( 'Y-m-d\TH:i:s', $post->post_modified_gmt ) . "+00:00</lastmod>\n";
@@ -126,6 +123,8 @@ class Incsub_SimpleSitemaps {
 
 			$priority = $priority - $prioritydiff;
 		}
+
+		$content = apply_filters('simple_sitemaps-generated_urlset', $content, $this);
 
 		$content .= '</urlset>';
 
@@ -139,18 +138,11 @@ class Incsub_SimpleSitemaps {
 	// Write a file, create directories as needed
 	// Written by Trent Tompkins: http://www.php.net/manual/en/function.file-put-contents.php#84180
 	function writefile( $filename, $content ) {
-		//====================================//
-		/*
-		$parts = explode( '/', $filename );
-		$file = array_pop( $parts );
-		$filename = '';
-		foreach ( $parts as $part ) {
-			if ( !is_dir( $filename .= "/$part" ) )
-				mkdir($filename);
-		}
-		file_put_contents( "$filename/$file", $content );
-		*/
-		//====================================//
+		// We don't bother if we don't have to.
+		if (!apply_filters('simple_sitemaps-use_cache', SIMPLE_SITEMAPS_USE_CACHE)) return true;
+		
+		$filename = apply_filters('simple_sitemaps-sitemap_location', $filename);
+
 		$parts = explode( '/', $filename );
 		$file = array_pop( $parts );
 		$filename = '';
@@ -160,8 +152,8 @@ class Incsub_SimpleSitemaps {
 				@mkdir($filename);
 			}
 		}
-		file_put_contents( "$filename/$file", $content );
-		//====================================//
+		$filename = untrailingslashit($filename);
+		file_put_contents( "{$filename}/{$file}", $content );
 	}
 }
 
