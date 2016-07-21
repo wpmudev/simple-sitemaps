@@ -28,12 +28,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 //force multisite
-if ( !is_multisite() )
-  die( __('Simple Sitemaps is only compatible with Multisite installs.') );
+if ( !is_multisite() ){
+	add_action( 'admin_notices', 'wpmudev_simple_sitemaps_ms_notice', 5 );
+  	add_action( 'network_admin_notices', 'wpmudev_simple_sitemaps_ms_notice', 5 );
+}
 
-if ( !file_exists( WP_CONTENT_DIR . '/sitemap.php' ) )
-	die( __('Simple Sitemaps file "sitemap.php" not found. Please move it to /wp-content/ before activating.') );
-
+if ( !file_exists( WP_CONTENT_DIR . '/sitemap.php' ) ){
+	add_action( 'admin_notices', 'wpmudev_simple_sitemaps_file_notice', 5 );
+  	add_action( 'network_admin_notices', 'wpmudev_simple_sitemaps_file_notice', 5 );
+}
+	
 if (!defined('SIMPLE_SITEMAPS_USE_CACHE')) define('SIMPLE_SITEMAPS_USE_CACHE', true);
 
 
@@ -276,6 +280,24 @@ if ( !function_exists( 'wdp_un_check' ) ) {
     if ( !class_exists( 'WPMUDEV_Update_Notifications' ) && current_user_can( 'edit_users' ) )
       echo '<div class="error fade"><p>' . __('Please install the latest version of <a href="http://premium.wpmudev.org/project/update-notifications/" title="Download Now &raquo;">our free Update Notifications plugin</a> which helps you stay up-to-date with the most stable, secure versions of WPMU DEV themes and plugins. <a href="http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-information/">More information &raquo;</a>', 'wpmudev') . '</a></p></div>';
   }
+}
+/* --------------------------------------------------------------------- */
+
+///////////////////////////////////////////////////////////////////////////
+/* -------------------- File required Notice -------------------- */
+if ( !function_exists( 'wpmudev_simple_sitemaps_file_notice' ) ) {
+  function wpmudev_simple_sitemaps_file_notice() {
+    if ( current_user_can( 'edit_users' ) )
+      echo '<div class="error fade"><p>' . __('Simple Sitemaps file "sitemap.php" not found. Please move it to /wp-content/ before activating. <a href="https://premium.wpmudev.org/project/sitemaps-and-seo-wordpress-mu-style/#product-usage" target="_blank">More information &raquo;</a></p></div>');}
+}
+/* --------------------------------------------------------------------- */
+
+///////////////////////////////////////////////////////////////////////////
+/* -------------------- Multisite required Notice -------------------- */
+if ( !function_exists( 'wpmudev_simple_sitemaps_ms_notice' ) ) {
+  function wpmudev_simple_sitemaps_ms_notice() {
+    if ( current_user_can( 'edit_users' ) )
+      echo '<div class="error fade"><p>' . __('Simple Sitemaps is only compatible with Multisite installs. </p></div>');}
 }
 /* --------------------------------------------------------------------- */
 ?>
