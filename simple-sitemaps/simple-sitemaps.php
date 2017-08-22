@@ -37,7 +37,7 @@ if ( !file_exists( WP_CONTENT_DIR . '/sitemap.php' ) ){
 	add_action( 'admin_notices', 'wpmudev_simple_sitemaps_file_notice', 5 );
   	add_action( 'network_admin_notices', 'wpmudev_simple_sitemaps_file_notice', 5 );
 }
-	
+
 if (!defined('SIMPLE_SITEMAPS_USE_CACHE')) define('SIMPLE_SITEMAPS_USE_CACHE', true);
 
 
@@ -51,7 +51,7 @@ class Incsub_SimpleSitemaps {
 		add_action( 'delete_post', array(&$this, 'DeleteSitemap'), 15 );
 
 		// Ping search engines on new post or post delete
-		// add_action( 'publish_post', array(&$this, 'PingSearchEngines'), 16 );
+		add_action( 'publish_post', array(&$this, 'PingSearchEngines'), 16 );
     	add_action( 'delete_post', array(&$this, 'PingSearchEngines'), 16 );
 
     	$totalposts = defined('SIMPLE_SITEMAPS_POST_SOFT_LIMIT') ? SIMPLE_SITEMAPS_POST_SOFT_LIMIT : $this->totalposts;
