@@ -3,7 +3,7 @@
 Plugin Name: Simple Sitemaps For Multisite
 Description: The ultimate search engine plugin - Simply have sitemaps created, submitted and updated for every blog on your site
 Plugin URI: http://premium.wpmudev.org/project/sitemaps-and-seo-wordpress-mu-style
-Version: 1.1
+Version: 1.2-BETA-1
 Author: WPMU DEV
 Author URI: http://premium.wpmudev.org/
 Network: true

@@ -5,6 +5,12 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
+1.2 - 2017
+----------------------------------------------------------------------
+- Fix: drop deprecated notification engines
+- Fix: send update pings on posts update
+- Fix: update dashboard notification
+
 1.1 - 2012-06-28
 ----------------------------------------------------------------------
 - Exposing totals, posts and pages counts for modification.
