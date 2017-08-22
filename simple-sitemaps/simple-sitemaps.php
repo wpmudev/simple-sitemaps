@@ -70,15 +70,13 @@ class Incsub_SimpleSitemaps {
 		$this->PingBing();
 	}
 
-  function PingBing() {
-    global $wpdb;
-    $bing = 'http://www.bing.com/webmaster/ping.aspx?siteMap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
-    wp_remote_get( $bing );
-  }
+	function PingBing() {
+		$bing = 'http://www.bing.com/webmaster/ping.aspx?siteMap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
+		wp_remote_get( $bing );
+	}
 
 	// Notify Google of a sitemap change
 	function PingGoogle() {
-		global $wpdb;
 		$pingurl = 'http://www.google.com/webmasters/sitemaps/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
 		wp_remote_get( $pingurl );
 	}
@@ -137,7 +135,7 @@ class Incsub_SimpleSitemaps {
 	function writefile( $filename, $content ) {
 		// We don't bother if we don't have to.
 		if (!apply_filters('simple_sitemaps-use_cache', SIMPLE_SITEMAPS_USE_CACHE)) return true;
-		
+
 		$filename = apply_filters('simple_sitemaps-sitemap_location', $filename);
 
 		$parts = explode( '/', $filename );
