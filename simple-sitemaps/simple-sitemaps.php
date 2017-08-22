@@ -67,15 +67,8 @@ class Incsub_SimpleSitemaps {
 
 	function PingSearchEngines() {
 		$this->PingGoogle();
-		$this->PingYahoo();
 		$this->PingBing();
-  }
-
-  function PingYahoo() {
-    global $wpdb;
-    $yahoo = 'http://search.yahooapis.com/SiteExplorerService/V1/ping?sitemap=' . urlencode( get_option('siteurl') . '/sitemap.xml' );
-    wp_remote_get( $yahoo );
-  }
+	}
 
   function PingBing() {
     global $wpdb;
